@@ -1,28 +1,21 @@
-//question 3
-#include "msp430G2553.h"
-
+//question 1
+#include <msp430.h>
+#define RedLED BIT6
+#define GreenLED BIT0
+#define ToggleLeds (P1OUT ^= RedLED|GreenLED)
+#define Button BIT3
 void main(void)
 {
- WDTCTL = WDTPW + WDTHOLD;  // Stop WDT
- P1DIR |= BIT6;             // P1.6 to output
- TA0CTL = TASSEL_2 + MC_1 + ID_3 + TACLR;//+TACLR;
- TA0CCR0 = 31250; // Set maximum count value (PWM Period)
- TA0CCR1 = 6200; // initialize counter compare value
- TA0CCTL0 |= CCIE;
- TA0CCTL1 |= CCIE;
- TA0CCTL0 &=~CCIFG;
- TA0CCTL1 &=~CCIFG;
- _enable_interrupts(); // Enter LPM0
+BCSCTL2 |= DIVS_3;
+WDTCTL = WDT_MDLY_32;
+IE1 |= WDTIE;
+P1DIR = RedLED|GreenLED;
+P1OUT = RedLED;
+_enable_interrupts();
+LPM1;
 }
-#pragma vector = TIMER0_A0_VECTOR       //define the interrupt service vector
-__interrupt void TA0_ISR (void)    // interrupt service routine
-    {
-    P1OUT |=BIT6;
-    TA0CCTL0 &=~CCIFG;
-    }
-#pragma vector = TIMER0_A1_VECTOR       //define the interrupt service vector
-__interrupt void TA1_ISR (void)    // interrupt service routine
-    {
-    P1OUT &=~BIT6;
-    TA0CCTL1 &=~CCIFG;
-    }
+#pragma vector = WDT_VECTOR
+__interrupt void WDT(void)
+{
+P1OUT = ToggleLeds;
+}
